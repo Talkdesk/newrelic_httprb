@@ -1,24 +1,5 @@
 module NewRelicHTTP
-  class HTTPResponse
-    attr_reader :response
-
-    def initialize(response)
-      @response = response
-    end
-
-    def [](key)
-      response.headers.each do |k,v|
-        if key.downcase == k.downcase
-          return v
-        end
-      end
-      nil
-    end
-
-    def to_hash
-      response.headers
-    end
-  end
+  HTTPResponse = NewRelic::Agent::HTTPClients::HTTPClientResponse
 
   class HTTPRequest
     attr_reader :request, :uri
