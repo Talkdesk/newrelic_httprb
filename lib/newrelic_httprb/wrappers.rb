@@ -1,5 +1,20 @@
 module NewRelicHTTP
-  HTTPResponse = NewRelic::Agent::HTTPClients::HTTPClientResponse
+  class HTTPResponse
+    attr_reader :response
+
+    def initialize(response)
+      @response = response
+    end
+
+    def [](key)
+      _, value = response.headers.find { |k,_| key.downcase == k.downcase }
+      value unless value.nil?
+    end
+
+    def to_hash
+      response.headers
+    end
+  end
 
   class HTTPRequest
     attr_reader :request, :uri
@@ -13,12 +28,16 @@ module NewRelicHTTP
       "http.rb"
     end
 
-    def method
-      request.verb
+    def host
+      if hostname = self['host']
+        hostname.split(':').first
+      else
+        request.host
+      end
     end
 
-    def host
-      request.socket_host
+    def method
+      request.verb.upcase
     end
 
     def [](key)
