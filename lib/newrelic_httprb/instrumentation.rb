@@ -1,0 +1,32 @@
+DependencyDetection.defer do
+  named :http_rb
+
+  depends_on do
+    defined?(HTTP) && defined?(HTTP::Client)
+  end
+
+  executes do
+    ::NewRelic::Agent.logger.info 'Installing http.rb instrumentation'
+    require 'new_relic/agent/cross_app_tracing'
+    require 'newrelic_httprb/wrappers'
+  end
+
+  executes do
+    class HTTP::Client
+      def perform_with_newrelic_trace(request, options)
+        wrapped_request = ::NewRelicHTTP::HTTPRequest.new(request)
+
+        response = nil
+        ::NewRelic::Agent::CrossAppTracing.tl_trace_http_request(wrapped_request) do
+          response = perform_without_newrelic_trace(request, options)
+          ::NewRelicHTTP::HTTPResponse.new(response)
+        end
+
+        response
+      end
+
+      alias perform_without_newrelic_trace perform
+      alias perform perform_with_newrelic_trace
+    end
+  end
+end
